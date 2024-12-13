@@ -2,7 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Effects;
+using Win2DInteropCS;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
@@ -17,6 +21,13 @@ using Windows.UI.Xaml.Navigation;
 
 namespace Sample.UWP
 {
+    [ComImport]
+    [Guid("47dd575d-ac05-4cdd-8049-9b02cd16f44c")]
+    public interface ID2D1Device
+    {
+
+    }
+
     /// <summary>
     /// Provides application-specific behavior to supplement the default Application class.
     /// </summary>
@@ -40,6 +51,11 @@ namespace Sample.UWP
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
             Frame rootFrame = Window.Current.Content as Frame;
+
+
+            var res = InteropHelper.GetWrappedResource(new BlendEffect(), CanvasDevice.GetSharedDevice(), 96);
+
+            object objec = Marshal.GetObjectForIUnknown(res);
 
             // Do not repeat app initialization when the Window already has content,
             // just ensure that the window is active
