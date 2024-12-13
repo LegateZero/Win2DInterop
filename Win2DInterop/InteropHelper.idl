@@ -1,0 +1,9 @@
+namespace Win2DInterop
+{
+    [default_interface]
+    runtimeclass InteropHelper
+    {
+        InteropHelper();
+        Int32 MyProperty;
+    }
+}
