@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+
 #include "InteropHelper.g.h"
 
 namespace winrt::Win2DInterop::implementation
@@ -33,8 +34,12 @@ namespace winrt::Win2DInterop::implementation
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Effects::ColorManagementProfile canvasDevice);
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Effects::EffectTransferTable3D canvasDevice);
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Effects::ICanvasEffect canvasDevice, Microsoft::Graphics::Canvas::CanvasDevice device, float dpi);
+        static __int64 CreateD3D11Device();
+        static Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice GetUWPDevice(__int64 pointer);
+        static Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface GetUWPSurface(__int64 pointer);
 
     private:
+        
         template<typename D2DResouce, typename Win2DObject> static __int64 GetWrappedResource(Win2DObject item, float dpi = 0.0f);
     };
 }

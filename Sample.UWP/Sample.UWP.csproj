@@ -130,6 +130,7 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\test.jpg" />
     <Content Include="Properties\Default.rd.xml" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -156,6 +157,12 @@
     <PackageReference Include="SkiaSharp">
       <Version>3.116.1</Version>
     </PackageReference>
+    <PackageReference Include="Vortice.Direct2D1">
+      <Version>2.4.2</Version>
+    </PackageReference>
+    <PackageReference Include="Vortice.Direct3D11">
+      <Version>2.4.2</Version>
+    </PackageReference>
     <PackageReference Include="Win2D.uwp">
       <Version>1.28.0</Version>
     </PackageReference>
@@ -164,6 +171,10 @@
     <ProjectReference Include="..\Win2DInteropCS\Win2DInteropCS.csproj">
       <Project>{fc4b7e48-3da0-484f-a6de-34b4a8a6e2d2}</Project>
       <Name>Win2DInteropCS</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Win2DInterop\Win2DInterop.vcxproj">
+      <Project>{372eb0da-fb03-4afb-8358-40db77ce36c4}</Project>
+      <Name>Win2DInterop</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

@@ -13,3 +13,5 @@
 #include "winrt/Microsoft.Graphics.Canvas.UI.Xaml.h"
 #include "Microsoft.Graphics.Canvas.native.h"
 #include <Microsoft.Graphics.Canvas.h>
+#include "windows.graphics.directx.direct3d11.h"
+#include "windows.graphics.directx.direct3d11.interop.h"

@@ -7,6 +7,9 @@
 #include <dwrite_2.h>
 #include <dwrite_3.h>
 #include "dxgi1_2.h"
+#include "d3d11.h"
+#include "d3d11_1.h"
+
 namespace winrt::Win2DInterop::implementation
 {
     namespace abi {
@@ -152,10 +155,97 @@ namespace winrt::Win2DInterop::implementation
     {
         return GetWrappedResource<ID2D1ColorContext>(canvasDevice);
     }
+
     __int64 InteropHelper::GetWrappedResource(Microsoft::Graphics::Canvas::Effects::EffectTransferTable3D canvasDevice)
     {
         return GetWrappedResource<ID2D1LookupTable3D>(canvasDevice);
     }
+
+    __int64 InteropHelper::CreateD3D11Device() 
+    {
+        // Указатели на устройство и контекст
+        com_ptr<ID3D11Device> d3dDevice;
+        com_ptr<ID3D11DeviceContext> d3dContext;
+
+        // Указатель на интерфейс устройства Direct3D 11.1 (если необходим)
+        com_ptr<ID3D11Device1> d3dDevice1;
+        com_ptr<ID3D11DeviceContext1> d3dContext1;
+
+        // Уровни функциональности (для указания минимального уровня API, который требуется)
+        D3D_FEATURE_LEVEL featureLevels[] = {
+            D3D_FEATURE_LEVEL_11_1,
+            D3D_FEATURE_LEVEL_11_0,
+            D3D_FEATURE_LEVEL_10_1,
+            D3D_FEATURE_LEVEL_10_0,
+            D3D_FEATURE_LEVEL_9_3,
+            D3D_FEATURE_LEVEL_9_2,
+            D3D_FEATURE_LEVEL_9_1
+        };
+
+        D3D_FEATURE_LEVEL featureLevel;
+
+        // Флаги создания устройства (например, для отладки)
+        UINT creationFlags = 0;
+#ifdef _DEBUG
+        creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+        // Вызов метода для создания устройства и контекста
+        HRESULT hr = D3D11CreateDevice(
+            nullptr,                     // Адаптер (nullptr для использования первичного адаптера)
+            D3D_DRIVER_TYPE_HARDWARE,    // Тип драйвера (аппаратный)
+            nullptr,                     // Не используется для аппаратного драйвера
+            creationFlags,               // Флаги создания
+            featureLevels,               // Уровни функциональности
+            ARRAYSIZE(featureLevels),    // Число уровней
+            D3D11_SDK_VERSION,           // Версия SDK
+            d3dDevice.put(),    // Указатель на устройство
+            &featureLevel,               // Фактически поддерживаемый уровень
+            d3dContext.put()    // Указатель на контекст устройства
+        );
+
+        if (FAILED(hr))
+        {
+            throw std::runtime_error("Failed to create D3D11 device");
+        }
+
+       // d3dDevice.try_as<ID3D11Device1>();
+        // Получение интерфейсов ID3D11Device1 и ID3D11DeviceContext1 (если доступны)
+      //  hr = d3dDevice.try_as(&d3dDevice1);
+     /*   if (SUCCEEDED(hr))
+        {
+            hr = d3dContext.As(&d3dContext1);
+        }*/
+
+        if (FAILED(hr))
+        {
+            throw std::runtime_error("Failed to query ID3D11Device1 or ID3D11DeviceContext1");
+        }
+        d3dDevice->AddRef();
+        return reinterpret_cast<__int64>(d3dDevice.get());
+        // Теперь d3dDevice1 и d3dContext1 можно использовать для работы с Direct3D 11.1
+    }
+
+    Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice InteropHelper::GetUWPDevice(__int64 pointer)
+    {
+        winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice d3dDevice2{ nullptr };
+        IDXGIDevice* device = reinterpret_cast<IDXGIDevice*>(pointer);
+        com_ptr<IDXGIDevice> ptrDevice{ device, winrt::take_ownership_from_abi };
+        CreateDirect3D11DeviceFromDXGIDevice(ptrDevice.get(),
+            reinterpret_cast<::IInspectable**>(winrt::put_abi(d3dDevice2)));
+        return d3dDevice2;
+    }
+
+    Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface InteropHelper::GetUWPSurface(__int64 pointer)
+    {
+        winrt::Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface d3dDevice2{ nullptr };
+        IDXGISurface* device = reinterpret_cast<IDXGISurface*>(pointer);
+        com_ptr<IDXGISurface> ptrDevice{ device, winrt::take_ownership_from_abi };
+        CreateDirect3D11SurfaceFromDXGISurface(ptrDevice.get(),
+            reinterpret_cast<::IInspectable**>(winrt::put_abi(d3dDevice2)));
+        return d3dDevice2;
+    }
+
     __int64 InteropHelper::GetWrappedResource(Microsoft::Graphics::Canvas::Effects::ICanvasEffect canvasDevice, Microsoft::Graphics::Canvas::CanvasDevice device, float dpi)
     {
         com_ptr<abi::ICanvasResourceWrapperNative> nativeDeviceWrapper = device.as<abi::ICanvasResourceWrapperNative>();
@@ -170,4 +260,5 @@ namespace winrt::Win2DInterop::implementation
         return result;
     }
 
+    
 }
