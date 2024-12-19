@@ -1,9 +1,38 @@
 namespace Win2DInterop
 {
     [default_interface]
-    runtimeclass InteropHelper
+    static runtimeclass InteropHelper
     {
-        InteropHelper();
-        Int32 MyProperty;
+        [default_overload]
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.CanvasDevice canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.CanvasBitmap canvasBitmap);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Geometry.CanvasCachedGeometry canvasCachedGeometry);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.CanvasCommandList canvasCommandList);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.CanvasDrawingSession canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Text.CanvasFontFace canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Text.CanvasFontSet canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Geometry.CanvasGeometry canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Geometry.CanvasGradientMesh canvasDevice);
+        [default_overload]
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Brushes.CanvasImageBrush canvasDevice, Single dpi);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Brushes.CanvasLinearGradientBrush canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Text.CanvasNumberSubstitution canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Brushes.CanvasRadialGradientBrush canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.CanvasRenderTarget canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Brushes.CanvasSolidColorBrush canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Geometry.CanvasStrokeStyle canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Svg.CanvasSvgDocument canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.CanvasSwapChain canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Text.CanvasTextFormat canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Text.CanvasTextLayout canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Text.CanvasTextRenderingParameters canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Text.CanvasTypography canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.CanvasVirtualBitmap canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Effects.ColorManagementProfile canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Effects.EffectTransferTable3D canvasDevice);
+        static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Effects.ICanvasEffect canvasDevice, Microsoft.Graphics.Canvas.CanvasDevice device, Single dpi);
+        static Int64 CreateD3D11Device();
+        static Windows.Graphics.DirectX.Direct3D11.IDirect3DDevice GetUWPDevice(Int64 pointer);
+        static Windows.Graphics.DirectX.Direct3D11.IDirect3DSurface GetUWPSurface(Int64 pointer);
     }
 }

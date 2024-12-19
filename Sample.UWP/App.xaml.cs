@@ -2,11 +2,27 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
+using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Effects;
+using SharpGen.Runtime;
+using SkiaSharp;
+using SkiaSharp.Views.GlesInterop;
+using SkiaSharpDraw;
+using Vortice.Direct2D1;
+using Vortice.Direct3D11;
+using Vortice.DXGI;
+using Win2DInterop;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Graphics.DirectX.Direct3D11;
+using Windows.Graphics.Imaging;
+using Windows.Storage;
+using Windows.Storage.Streams;
+using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -14,6 +30,9 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using EGLSurface = System.IntPtr;
+
+
 
 namespace Sample.UWP
 {
@@ -22,6 +41,8 @@ namespace Sample.UWP
     /// </summary>
     sealed partial class App : Application
     {
+        public static IntPtr EGL_NO_SURFACE = IntPtr.Zero;
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -37,10 +58,107 @@ namespace Sample.UWP
         /// will be used such as when the application is launched to open a specific file.
         /// </summary>
         /// <param name="e">Details about the launch request and process.</param>
-        protected override void OnLaunched(LaunchActivatedEventArgs e)
+        protected override async void OnLaunched(LaunchActivatedEventArgs e)
         {
             Frame rootFrame = Window.Current.Content as Frame;
 
+            try
+            {
+                var image = await CanvasBitmap.LoadAsync(CanvasDevice.GetSharedDevice(), new Uri("ms-appx:///Assets/test.jpg"), 96, CanvasAlphaMode.Premultiplied);
+
+                var array = image.GetPixelBytes();
+                var res = D3D11.D3D11CreateDevice(null, Vortice.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug | DeviceCreationFlags.BgraSupport, new Vortice.Direct3D.FeatureLevel[]
+                {
+                    Vortice.Direct3D.FeatureLevel.Level_11_1,
+                    Vortice.Direct3D.FeatureLevel.Level_11_0,
+                    Vortice.Direct3D.FeatureLevel.Level_9_3,
+                    Vortice.Direct3D.FeatureLevel.Level_9_2
+                }, out ID3D11Device dev);
+
+                var pointer = GCHandle.Alloc(array, GCHandleType.Pinned);
+                var resour = new SubresourceData(pointer.AddrOfPinnedObject(), 1920 * 4);
+
+                ID3D11Texture2D texture = dev.CreateTexture2D(Format.B8G8R8A8_UNorm, 1920, 1080, 1, 1, new SubresourceData[]
+                {
+                    resour
+                }, BindFlags.RenderTarget, ResourceOptionFlags.Shared);
+
+                IDXGISurface surface = texture.QueryInterface<IDXGISurface>();
+                IDXGIDevice1 dxgiDevice = dev.QueryInterfaceOrNull<IDXGIDevice1>();
+                IDirect3DDevice deviceUWP = InteropHelper.GetUWPDevice((long)dxgiDevice.NativePointer);
+                CanvasDevice inContextWin2dDevice = CanvasDevice.CreateFromDirect3D11Device(deviceUWP);
+                ID2D1Device1 device = new ID2D1Device1((IntPtr)InteropHelper.GetWrappedResource(inContextWin2dDevice));
+                ID2D1RenderTarget d2dDevice = device.Factory.CreateDxgiSurfaceRenderTarget(surface, new RenderTargetProperties(new Vortice.DCommon.PixelFormat(Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied)));
+                CanvasRenderTarget target = CanvasRenderTarget.CreateFromDirect3D11Surface(inContextWin2dDevice, InteropHelper.GetUWPSurface((long)surface.NativePointer));
+                IDXGIResource resource = texture.QueryInterface<IDXGIResource>();
+
+
+
+
+
+
+
+                EGLSurface eglSurface = EGL_NO_SURFACE;
+
+                int[] pBufferAttributes = new[]
+                {
+                    Egl.EGL_WIDTH, 1920,
+                    Egl.EGL_HEIGHT, 1080,
+                    Egl.EGL_TEXTURE_TARGET, Egl.EGL_TEXTURE_2D,
+                    Egl.EGL_TEXTURE_FORMAT, Egl.EGL_TEXTURE_RGBA,
+                    Egl.EGL_NONE
+                };
+
+
+                var glesContext = new GlesContext();
+
+                EGLSurface surfac= Egl.eglCreatePbufferFromClientBuffer(GlesContext.eglDisplay, EGLenum.EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, resource.SharedHandle, glesContext.eglConfig, pBufferAttributes);
+
+
+                using (CanvasDrawingSession sesion = target.CreateDrawingSession())
+                {
+                    sesion.FillEllipse(new System.Numerics.Vector2(100, 100), 40, 40, Colors.Red);
+                }
+
+                var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png", CreationCollisionOption.ReplaceExisting);
+
+                using (var stream = await file.OpenAsync(FileAccessMode.ReadWrite))
+                {
+                    await CanvasImage.SaveAsync(target, target.Bounds, 96, target, stream, CanvasBitmapFileFormat.Png);
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                var a = ex;
+            }
+            //D3D11_TEXTURE2D_DESC des = new D3D11_TEXTURE2D_DESC()
+            //{
+            //    Height = 1080,
+            //    Width = 1920,
+            //    ArraySize = 1080 * 1920 * 4,
+            //    CPUAccessFlags = (uint)D3D11_CPU_ACCESS_FLAG.D3D11_CPU_ACCESS_READ,
+            //    Format = DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UINT,
+            //    BindFlags = (uint)D3D11_BIND_FLAG.D3D11_BIND_RENDER_TARGET,
+            //    Usage = D3D11_USAGE.D3D11_USAGE_DYNAMIC,
+
+            //};
+
+            //IBuffer buffer = await FileIO.ReadBufferAsync(await StorageFile.GetFileFromPathAsync("ms-appx:///Assets/test.jpg"));
+
+            //InMemoryRandomAccessStream stream = new InMemoryRandomAccessStream();
+            //CanvasBitmap bitmap = CanvasBitmap.CreateFromBytes(CanvasDevice.GetSharedDevice(), buffer.ToArray(), 1920, 1080, Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UInt, 96);
+            //var bytes = bitmap.GetPixelBytes();
+
+            //D3D11_SUBRESOURCE_DATA data = new D3D11_SUBRESOURCE_DATA()
+            //{
+            //    pSysMem = bitmap.Pixe
+            //};
+
+            //Windows.Storage.Streams.Buffer.CreateCopyFromMemoryBuffer
+
+            //  device.CreateTexture2D(ref des, new D3D11_SUBRESOURCE_DATA[1] { data }, out ID3D11Texture2D texure2d);
             // Do not repeat app initialization when the Window already has content,
             // just ensure that the window is active
             if (rootFrame == null)
