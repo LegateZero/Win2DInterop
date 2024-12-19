@@ -8,7 +8,6 @@ namespace winrt::Win2DInterop::implementation
     static struct InteropHelper
     {
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::CanvasDevice canvasDevice);
-
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::CanvasBitmap canvasBitmap);
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Geometry::CanvasCachedGeometry canvasCachedGeometry);
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::CanvasCommandList canvasCommandList);
@@ -34,7 +33,6 @@ namespace winrt::Win2DInterop::implementation
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Effects::ColorManagementProfile canvasDevice);
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Effects::EffectTransferTable3D canvasDevice);
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Effects::ICanvasEffect canvasDevice, Microsoft::Graphics::Canvas::CanvasDevice device, float dpi);
-        static __int64 CreateD3D11Device();
         static Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice GetUWPDevice(__int64 pointer);
         static Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface GetUWPSurface(__int64 pointer);
 

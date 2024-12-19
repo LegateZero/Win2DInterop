@@ -120,7 +120,8 @@
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="InteropHelper.cs" />
+    <Compile Include="D3D11UWPInterop.cs" />
+    <Compile Include="Win2DD2DInterop.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\Win2DInteropCS.rd.xml" />
   </ItemGroup>
