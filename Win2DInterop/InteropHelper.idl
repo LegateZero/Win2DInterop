@@ -31,7 +31,6 @@ namespace Win2DInterop
         static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Effects.ColorManagementProfile canvasDevice);
         static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Effects.EffectTransferTable3D canvasDevice);
         static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Effects.ICanvasEffect canvasDevice, Microsoft.Graphics.Canvas.CanvasDevice device, Single dpi);
-        static Int64 CreateD3D11Device();
         static Windows.Graphics.DirectX.Direct3D11.IDirect3DDevice GetUWPDevice(Int64 pointer);
         static Windows.Graphics.DirectX.Direct3D11.IDirect3DSurface GetUWPSurface(Int64 pointer);
     }
