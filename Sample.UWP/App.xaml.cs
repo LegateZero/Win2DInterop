@@ -8,6 +8,8 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using SharpGen.Runtime;
 using SkiaSharp;
+using SkiaSharp.Views.GlesInterop;
+using SkiaSharpDraw;
 using Vortice.Direct2D1;
 using Vortice.Direct3D11;
 using Vortice.DXGI;
@@ -28,6 +30,9 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
+using EGLSurface = System.IntPtr;
+
+
 
 namespace Sample.UWP
 {
@@ -36,6 +41,8 @@ namespace Sample.UWP
     /// </summary>
     sealed partial class App : Application
     {
+        public static IntPtr EGL_NO_SURFACE = IntPtr.Zero;
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -74,7 +81,7 @@ namespace Sample.UWP
                 ID3D11Texture2D texture = dev.CreateTexture2D(Format.B8G8R8A8_UNorm, 1920, 1080, 1, 1, new SubresourceData[]
                 {
                     resour
-                }, BindFlags.RenderTarget);
+                }, BindFlags.RenderTarget, ResourceOptionFlags.Shared);
 
                 IDXGISurface surface = texture.QueryInterface<IDXGISurface>();
                 IDXGIDevice1 dxgiDevice = dev.QueryInterfaceOrNull<IDXGIDevice1>();
@@ -83,10 +90,34 @@ namespace Sample.UWP
                 ID2D1Device1 device = new ID2D1Device1((IntPtr)InteropHelper.GetWrappedResource(inContextWin2dDevice));
                 ID2D1RenderTarget d2dDevice = device.Factory.CreateDxgiSurfaceRenderTarget(surface, new RenderTargetProperties(new Vortice.DCommon.PixelFormat(Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied)));
                 CanvasRenderTarget target = CanvasRenderTarget.CreateFromDirect3D11Surface(inContextWin2dDevice, InteropHelper.GetUWPSurface((long)surface.NativePointer));
+                IDXGIResource resource = texture.QueryInterface<IDXGIResource>();
+
+
+
+
+
+
+
+                EGLSurface eglSurface = EGL_NO_SURFACE;
+
+                int[] pBufferAttributes = new[]
+                {
+                    Egl.EGL_WIDTH, 1920,
+                    Egl.EGL_HEIGHT, 1080,
+                    Egl.EGL_TEXTURE_TARGET, Egl.EGL_TEXTURE_2D,
+                    Egl.EGL_TEXTURE_FORMAT, Egl.EGL_TEXTURE_RGBA,
+                    Egl.EGL_NONE
+                };
+
+
+                var glesContext = new GlesContext();
+
+                EGLSurface surfac= Egl.eglCreatePbufferFromClientBuffer(GlesContext.eglDisplay, EGLenum.EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, resource.SharedHandle, glesContext.eglConfig, pBufferAttributes);
+
 
                 using (CanvasDrawingSession sesion = target.CreateDrawingSession())
                 {
-                    sesion.DrawEllipse(new System.Numerics.Vector2(100, 100), 40, 40, Colors.Red);
+                    sesion.FillEllipse(new System.Numerics.Vector2(100, 100), 40, 40, Colors.Red);
                 }
 
                 var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png", CreationCollisionOption.ReplaceExisting);

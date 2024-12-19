@@ -132,6 +132,12 @@
     <Midl Include="InteropHelper.idl" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\sample.uwp\libEGL.dll">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="..\sample.uwp\libGLESv2.dll">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="packages.config" />
     <None Include="Win2DInterop.def" />
   </ItemGroup>
