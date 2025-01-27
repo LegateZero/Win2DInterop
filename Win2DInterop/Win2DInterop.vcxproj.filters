@@ -22,6 +22,8 @@
   <ItemGroup>
     <None Include="Win2DInterop.def" />
     <None Include="packages.config" />
+    <None Include="..\sample.uwp\libEGL.dll" />
+    <None Include="..\sample.uwp\libGLESv2.dll" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PropertySheet.props" />

@@ -64,68 +64,76 @@ namespace Sample.UWP
 
             try
             {
-                var image = await CanvasBitmap.LoadAsync(CanvasDevice.GetSharedDevice(), new Uri("ms-appx:///Assets/test.jpg"), 96, CanvasAlphaMode.Premultiplied);
 
-                var array = image.GetPixelBytes();
-                var res = D3D11.D3D11CreateDevice(null, Vortice.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug | DeviceCreationFlags.BgraSupport, new Vortice.Direct3D.FeatureLevel[]
+                var image = await CanvasRenderTarget.LoadAsync(CanvasDevice.GetSharedDevice(), new Uri("ms-appx:///Assets/test.jpg"), 96, CanvasAlphaMode.Premultiplied);
+                CanvasRenderTarget target = new CanvasRenderTarget(image, image.Size);
+
+                using (var ds = target.CreateDrawingSession())
                 {
-                    Vortice.Direct3D.FeatureLevel.Level_11_1,
-                    Vortice.Direct3D.FeatureLevel.Level_11_0,
-                    Vortice.Direct3D.FeatureLevel.Level_9_3,
-                    Vortice.Direct3D.FeatureLevel.Level_9_2
-                }, out ID3D11Device dev);
-
-                var pointer = GCHandle.Alloc(array, GCHandleType.Pinned);
-                var resour = new SubresourceData(pointer.AddrOfPinnedObject(), 1920 * 4);
-
-                ID3D11Texture2D texture = dev.CreateTexture2D(Format.B8G8R8A8_UNorm, 1920, 1080, 1, 1, new SubresourceData[]
-                {
-                    resour
-                }, BindFlags.RenderTarget, ResourceOptionFlags.Shared);
-
-                IDXGISurface surface = texture.QueryInterface<IDXGISurface>();
-                IDXGIDevice1 dxgiDevice = dev.QueryInterfaceOrNull<IDXGIDevice1>();
-                IDirect3DDevice deviceUWP = InteropHelper.GetUWPDevice((long)dxgiDevice.NativePointer);
-                CanvasDevice inContextWin2dDevice = CanvasDevice.CreateFromDirect3D11Device(deviceUWP);
-                ID2D1Device1 device = new ID2D1Device1((IntPtr)InteropHelper.GetWrappedResource(inContextWin2dDevice));
-                ID2D1RenderTarget d2dDevice = device.Factory.CreateDxgiSurfaceRenderTarget(surface, new RenderTargetProperties(new Vortice.DCommon.PixelFormat(Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied)));
-                CanvasRenderTarget target = CanvasRenderTarget.CreateFromDirect3D11Surface(inContextWin2dDevice, InteropHelper.GetUWPSurface((long)surface.NativePointer));
-                IDXGIResource resource = texture.QueryInterface<IDXGIResource>();
-
-
-
-
-
-
-
-                EGLSurface eglSurface = EGL_NO_SURFACE;
-
-                int[] pBufferAttributes = new[]
-                {
-                    Egl.EGL_WIDTH, 1920,
-                    Egl.EGL_HEIGHT, 1080,
-                    Egl.EGL_TEXTURE_TARGET, Egl.EGL_TEXTURE_2D,
-                    Egl.EGL_TEXTURE_FORMAT, Egl.EGL_TEXTURE_RGBA,
-                    Egl.EGL_NONE
-                };
-
-
-                var glesContext = new GlesContext();
-
-                EGLSurface surfac= Egl.eglCreatePbufferFromClientBuffer(GlesContext.eglDisplay, EGLenum.EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, resource.SharedHandle, glesContext.eglConfig, pBufferAttributes);
-
-
-                using (CanvasDrawingSession sesion = target.CreateDrawingSession())
-                {
-                    sesion.FillEllipse(new System.Numerics.Vector2(100, 100), 40, 40, Colors.Red);
+                    ds.DrawImage(image);
                 }
 
-                var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png", CreationCollisionOption.ReplaceExisting);
+                var surfacePtr = InteropHelper.CreateSharedEglSurface(target);
+                //var array = image.GetPixelBytes();
+                //var res = D3D11.D3D11CreateDevice(null, Vortice.Direct3D.DriverType.Hardware, DeviceCreationFlags.Debug | DeviceCreationFlags.BgraSupport, new Vortice.Direct3D.FeatureLevel[]
+                //{
+                //    Vortice.Direct3D.FeatureLevel.Level_11_1,
+                //    Vortice.Direct3D.FeatureLevel.Level_11_0,
+                //    Vortice.Direct3D.FeatureLevel.Level_9_3,
+                //    Vortice.Direct3D.FeatureLevel.Level_9_2
+                //}, out ID3D11Device dev);
 
-                using (var stream = await file.OpenAsync(FileAccessMode.ReadWrite))
-                {
-                    await CanvasImage.SaveAsync(target, target.Bounds, 96, target, stream, CanvasBitmapFileFormat.Png);
-                }
+                //var pointer = GCHandle.Alloc(array, GCHandleType.Pinned);
+                //var resour = new SubresourceData(pointer.AddrOfPinnedObject(), 1920 * 4);
+
+                //ID3D11Texture2D texture = dev.CreateTexture2D(Format.B8G8R8A8_UNorm, 1920, 1080, 1, 1, new SubresourceData[]
+                //{
+                //    resour
+                //}, BindFlags.RenderTarget, ResourceOptionFlags.Shared);
+
+                //IDXGISurface surface = texture.QueryInterface<IDXGISurface>();
+                //IDXGIDevice1 dxgiDevice = dev.QueryInterfaceOrNull<IDXGIDevice1>();
+                //IDirect3DDevice deviceUWP = InteropHelper.GetUWPDevice((long)dxgiDevice.NativePointer);
+                //CanvasDevice inContextWin2dDevice = CanvasDevice.CreateFromDirect3D11Device(deviceUWP);
+                //ID2D1Device1 device = new ID2D1Device1((IntPtr)InteropHelper.GetWrappedResource(inContextWin2dDevice));
+                //ID2D1RenderTarget d2dDevice = device.Factory.CreateDxgiSurfaceRenderTarget(surface, new RenderTargetProperties(new Vortice.DCommon.PixelFormat(Format.B8G8R8A8_UNorm, Vortice.DCommon.AlphaMode.Premultiplied)));
+                //CanvasRenderTarget target = CanvasRenderTarget.CreateFromDirect3D11Surface(inContextWin2dDevice, InteropHelper.GetUWPSurface((long)surface.NativePointer));
+                //IDXGIResource resource = texture.QueryInterface<IDXGIResource>();
+
+
+
+
+
+
+
+                //EGLSurface eglSurface = EGL_NO_SURFACE;
+
+                //int[] pBufferAttributes = new[]
+                //{
+                //    Egl.EGL_WIDTH, 1920,
+                //    Egl.EGL_HEIGHT, 1080,
+                //    Egl.EGL_TEXTURE_TARGET, Egl.EGL_TEXTURE_2D,
+                //    Egl.EGL_TEXTURE_FORMAT, Egl.EGL_TEXTURE_RGBA,
+                //    Egl.EGL_NONE
+                //};
+
+
+                //var glesContext = new GlesContext();
+
+                //EGLSurface surfac= Egl.eglCreatePbufferFromClientBuffer(GlesContext.eglDisplay, EGLenum.EGL_D3D_TEXTURE_2D_SHARE_HANDLE_ANGLE, resource.SharedHandle, glesContext.eglConfig, pBufferAttributes);
+
+
+                //using (CanvasDrawingSession sesion = target.CreateDrawingSession())
+                //{
+                //    sesion.FillEllipse(new System.Numerics.Vector2(100, 100), 40, 40, Colors.Red);
+                //}
+
+                //var file = await ApplicationData.Current.LocalFolder.CreateFileAsync("temp.png", CreationCollisionOption.ReplaceExisting);
+
+                //using (var stream = await file.OpenAsync(FileAccessMode.ReadWrite))
+                //{
+                //    await CanvasImage.SaveAsync(target, target.Bounds, 96, target, stream, CanvasBitmapFileFormat.Png);
+                //}
 
 
             }

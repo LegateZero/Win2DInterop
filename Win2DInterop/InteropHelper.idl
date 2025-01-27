@@ -33,5 +33,6 @@ namespace Win2DInterop
         static Int64 GetWrappedResource(Microsoft.Graphics.Canvas.Effects.ICanvasEffect canvasDevice, Microsoft.Graphics.Canvas.CanvasDevice device, Single dpi);
         static Windows.Graphics.DirectX.Direct3D11.IDirect3DDevice GetUWPDevice(Int64 pointer);
         static Windows.Graphics.DirectX.Direct3D11.IDirect3DSurface GetUWPSurface(Int64 pointer);
+        static Int64 CreateSharedEglSurface(Microsoft.Graphics.Canvas.CanvasBitmap canvasBitmap);
     }
 }

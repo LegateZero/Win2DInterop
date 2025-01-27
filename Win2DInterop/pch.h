@@ -15,3 +15,17 @@
 #include <Microsoft.Graphics.Canvas.h>
 #include "windows.graphics.directx.direct3d11.h"
 #include "windows.graphics.directx.direct3d11.interop.h"
+
+// Enable function definitions in the GL headers below
+#define GL_GLEXT_PROTOTYPES
+#define EGL_EGLEXT_PROTOTYPES
+
+// OpenGL ES includes
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+
+// EGL includes
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <EGL/eglplatform.h>
+#include <EGL/eglext_angle.h>

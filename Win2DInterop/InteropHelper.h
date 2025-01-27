@@ -32,15 +32,35 @@ namespace winrt::Win2DInterop::implementation
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::CanvasVirtualBitmap canvasDevice);
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Effects::ColorManagementProfile canvasDevice);
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Effects::EffectTransferTable3D canvasDevice);
+        static __int64 CreateSharedEglSurface(Microsoft::Graphics::Canvas::CanvasBitmap canvasBitmap);
+
         static __int64 GetWrappedResource(Microsoft::Graphics::Canvas::Effects::ICanvasEffect canvasDevice, Microsoft::Graphics::Canvas::CanvasDevice device, float dpi);
         static Windows::Graphics::DirectX::Direct3D11::IDirect3DDevice GetUWPDevice(__int64 pointer);
         static Windows::Graphics::DirectX::Direct3D11::IDirect3DSurface GetUWPSurface(__int64 pointer);
 
     private:
-        
+        static void InitializeEglDisplay();
         template<typename D2DResouce, typename Win2DObject> static __int64 GetWrappedResource(Win2DObject item, float dpi = 0.0f);
+     
+    private:
+        static EGLDisplay _display;
+        static EGLConfig _config;
+        static EGLContext _context;
     };
+
+    struct TestApi {
+        int J = 10;
+    };
+
+    extern "C" {
+        void create_test_api(void** api) {
+            TestApi* apii = new TestApi();
+
+        }
+    }
 }
+
+
 
 namespace winrt::Win2DInterop::factory_implementation
 {
