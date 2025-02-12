@@ -1,0 +1,95 @@
+_veryTempCanvas ??= new CanvasRenderTarget(target, target.Size);
+
+float brushSize = 80;
+
+using(var sourceDs = _veryTempCanvas.CreateDrawingSession())
+{
+	sourceDs.Clear(Colors.Transparent);
+
+	using(var circle = CanvasGeometry.CreateCircle(target, position.ToVector2(), brushSize/2))
+	{
+		using(var layer = sourceDs.CreateLayer(1, circle))
+		{
+			sourceDs.DrawImage(target);
+		}
+	}
+}
+
+using (var targetDs = target.CreateDrawingSession())
+{
+	if (!usePrev)
+	{
+		spacingX = (float)((_random.NextDouble() - 0.5) * 2) * brushSize / 8;
+		spacingY = (float)((_random.NextDouble() - 0.5) * 2) * brushSize / 8;
+	}
+	else
+	{
+		spacingX *= -1;
+		spacingY *= -1;
+	}
+		usePrev = !usePrev;
+
+	float amount = (float)(_random.NextDouble());
+
+	using (var circle = CanvasGeometry.CreateCircle(target, position.ToVector2()- new Vector2(0, 0), brushSize / 2))
+	{
+		using (var combined = circle.CombineWith(CanvasGeometry.CreateCircle(target, position.ToVector2() + new Vector2(spacingX, spacingY), brushSize / 2), Matrix3x2.Identity, CanvasGeometryCombine.Intersect)) 
+		{
+			targetDs.Blend = CanvasBlend.Copy;
+			//targetDs.FillGeometry(combined, Colors.Transparent);
+			//targetDs.Blend = CanvasBlend.SourceOver;
+
+			targetDs.FillGeometry(combined, new CanvasImageBrush(target, new ScaleEffect()
+			{
+				Source = new ArithmeticCompositeEffect()
+				{
+					Source1Amount = amount,
+					Source1 = new Transform2DEffect()
+					{
+						Source = _veryTempCanvas,
+						TransformMatrix = Matrix3x2.CreateTranslation(-0, -0)
+					},
+					Source2Amount = 1 - amount,
+					Source2 = new Transform2DEffect()
+					{
+						Source = _veryTempCanvas,
+						TransformMatrix = Matrix3x2.CreateTranslation(spacingX, spacingY)
+					},
+					MultiplyAmount = 0
+				},
+				 Scale = new Vector2(1.01f,1.01f),
+				  CenterPoint = position.ToVector2() + new Vector2(spacingX, spacingY)
+			})
+			{
+				SourceRectangle = target.Bounds
+			});
+			//new ArithmeticCompositeEffect()
+			//{
+			//	Source1Amount = 0.5f,
+			//	Source1 = _veryTempCanvas,
+			//	Source2Amount = 0.5f,
+			//	Source2 = new Transform2DEffect()
+			//	{
+			//		Source = _veryTempCanvas,
+			//		TransformMatrix = Matrix3x2.CreateTranslation(spacingX, spacingY)
+			//	},
+			//	MultiplyAmount = 0
+			//}
+			//using(var layer = targetDs.CreateLayer(1, combined))
+			//{
+			//	targetDs.DrawImage(new ArithmeticCompositeEffect()
+			//	{
+			//		Source1Amount = 0.5f,
+			//		Source1 = _veryTempCanvas,
+			//		Source2Amount = 0.5f,
+			//		Source2 = new Transform2DEffect()
+			//		{
+			//			Source = _veryTempCanvas,
+			//			TransformMatrix = Matrix3x2.CreateTranslation(spacingX, spacingY)
+			//		},
+			//		MultiplyAmount = 0
+			//	});
+			//}
+		}
+	}
+}
