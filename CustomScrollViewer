@@ -1,0 +1,381 @@
+public sealed class CustomScrollViewer : ContentControl
+{
+	private CustomContentPresenter _contentPresenter;
+
+	public static DependencyProperty VerticalOffsetProperty = DependencyProperty.Register(nameof(VerticalOffset), typeof(double), typeof(CustomContentPresenter), new PropertyMetadata(0d));
+
+	public static DependencyProperty IsCenteringEnabledProperty = DependencyProperty.Register(nameof(IsCenteringEnabled), typeof(bool), typeof(CustomContentPresenter), new PropertyMetadata(0d));
+
+
+	public double VerticalOffset
+	{
+		get => (double)GetValue(VerticalOffsetProperty);
+		set => SetValue(VerticalOffsetProperty, value);
+	}
+
+	public bool IsCenteringEnabled
+	{
+		get => (bool)GetValue(IsCenteringEnabledProperty);
+		set => SetValue(IsCenteringEnabledProperty, value);
+	}
+
+	#region Public Constructor
+
+	public CustomScrollViewer()
+	{
+		this.DefaultStyleKey = typeof(CustomScrollViewer);
+
+	}
+
+	protected override void OnApplyTemplate()
+	{
+		base.OnApplyTemplate();
+
+		_contentPresenter = GetTemplateChild("ContentPresenter") as CustomContentPresenter;
+
+		if (_contentPresenter != null)
+		{
+			Binding binding = new Binding()
+			{
+				Mode = BindingMode.TwoWay,
+				Source = _contentPresenter,
+				Path = new PropertyPath(nameof(VerticalOffset))
+			};
+
+			SetBinding(VerticalOffsetProperty, binding);
+
+			foreach (var source in _sources)
+			{
+				_contentPresenter.AddCustomInteractionSource(source);
+			}
+		}
+
+	}
+
+	private List<VisualInteractionSource> _sources = new List<VisualInteractionSource>();
+	#endregion Public Constructor
+
+	public void AddCustomInteractionSource(VisualInteractionSource source)
+	{
+		_sources.Add(source);
+
+		if (_contentPresenter != null)
+		{
+			_contentPresenter.AddCustomInteractionSource(source);
+		}
+	}
+}
+
+public class CustomContentPresenter : ContentPresenter, IInteractionTrackerOwner
+{
+	public void AddCustomInteractionSource(VisualInteractionSource source)
+	{
+		if (_interactionTracker != null)
+		{
+			_interactionTracker.InteractionSources.Add(source);
+		}
+		else
+		{
+			_sourcer.Add(source);
+		}
+	}
+
+	public bool IsCenteringEnabled { get; set; } = false;
+
+	private List<VisualInteractionSource> _sourcer = new List<VisualInteractionSource>();
+
+	#region Private Fields
+
+	private Compositor _compositor;
+
+	private Visual _visual;
+
+	private CustomContentPresenter _contentPresenter;
+
+	VisualInteractionSource _visualInteractionSource;
+
+	InteractionTracker _interactionTracker;
+
+	#endregion Private Fields
+
+	public static DependencyProperty VerticalOffsetProperty = DependencyProperty.Register(nameof(VerticalOffset), typeof(double), typeof(CustomContentPresenter), new PropertyMetadata(0d));
+
+	public double VerticalOffset
+	{
+		get => (double)GetValue(VerticalOffsetProperty);
+		set => SetValue(VerticalOffsetProperty, value);
+	}
+
+	public CustomContentPresenter()
+	{
+		UIElement.RegisterAsScrollPort(this);
+		_visual = ElementCompositionPreview.GetElementVisual(this);
+		_compositor = _visual.Compositor;
+		Loaded += CustomContentPresenter_Loaded;
+		//AddHandler(PointerWheelChangedEvent, (PointerEventHandler)CustomContentPresenter_PointerWheelChanged, true);
+
+		SizeChanged += CustomContentPresenter_SizeChanged;
+		PreviewKeyDown += CustomContentPresenter_PreviewKeyDown;
+		Window.Current.CoreWindow.KeyDown += CoreWindow_KeyDown;
+
+		PointerWheelChanged += CustomContentPresenter_PointerWheelChanged1;
+		PointerPressed += CustomContentPresenter_PointerPressed;
+		PointerReleased += CustomContentPresenter_PointerReleased;
+
+		
+	}
+
+	private void CustomContentPresenter_PointerWheelChanged1(object sender, PointerRoutedEventArgs e)
+	{
+		var pointerPoint = e.GetCurrentPoint((UIElement)VisualTreeHelper.GetChild(this, 0));
+		var delta = pointerPoint.Properties.MouseWheelDelta;
+		float currentScale = _interactionTracker.Scale; 
+		float zoomFactor = 1.1f; 
+		float scaleDelta = delta > 0 ? zoomFactor : (1 / zoomFactor);
+		float newScale = Math.Clamp(currentScale * scaleDelta, _interactionTracker.MinScale, _interactionTracker.MaxScale);
+
+		_interactionTracker.TryUpdateScale(newScale, pointerPoint.Position.ToVector3()*_interactionTracker.Scale - _interactionTracker.Position );
+	}
+
+	private ExpressionAnimation _middleAnimation;
+	private bool _isMiddleAnimationStarted;
+
+	private Vector2 _startPosition;
+
+	private void CustomContentPresenter_PointerReleased(object sender, PointerRoutedEventArgs e)
+	{
+		if (_isMiddleAnimationStarted)
+		{
+			_isMiddleAnimationStarted = false;
+			PointerMoved -= CustomContentPresenter_PointerMoved;
+			
+		}
+	}
+
+	private void CustomContentPresenter_PointerPressed(object sender, PointerRoutedEventArgs e)
+	{
+		if (e.GetCurrentPoint(this).Properties.IsMiddleButtonPressed)
+		{
+			_startPosition = e.GetCurrentPoint(this).Position.ToVector2() + new Vector2(_interactionTracker.Position.X, _interactionTracker.Position.Y);
+			_isMiddleAnimationStarted = true;
+
+			PointerMoved += CustomContentPresenter_PointerMoved;
+
+
+
+			
+		}
+	}
+
+	private void CustomContentPresenter_PointerMoved(object sender, PointerRoutedEventArgs e)
+	{
+		_interactionTracker.TryUpdatePosition(- new Vector3(e.GetCurrentPoint(this).Position.ToVector2() - _startPosition,0));
+	}
+
+	private void CoreWindow_KeyDown(Windows.UI.Core.CoreWindow sender, Windows.UI.Core.KeyEventArgs args)
+	{
+	}
+
+	private void CustomContentPresenter_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+	{
+
+	}
+
+	private void CustomContentPresenter_SizeChanged(object sender, SizeChangedEventArgs e)
+	{
+		if (_interactionTracker != null)
+		{
+			VerticalOffset = _interactionTracker.Position.Y;
+		}
+	}
+
+	private void CustomContentPresenter_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+	{
+		var point = e.GetCurrentPoint(this);
+
+		if (Window.Current.CoreWindow.GetKeyState(Windows.System.VirtualKey.Control).HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down))
+		{
+			//_interactionTracker.TryUpdateScaleWithAdditionalVelocity(5, new Vector3();
+		}
+		else
+		{
+			if (point.Properties.IsHorizontalMouseWheel)
+			{
+				_interactionTracker.TryUpdatePositionWithAdditionalVelocity(new Vector3(e.GetCurrentPoint(this).Properties.MouseWheelDelta * 3, 0, 0));
+
+			}
+			else
+			{
+				_interactionTracker.TryUpdatePositionWithAdditionalVelocity(new Vector3(0, -e.GetCurrentPoint(this).Properties.MouseWheelDelta * 3, 0));
+			}
+		}
+
+		//_visualInteractionSource.TryRedirectForManipulation(e.GetCurrentPoint(this));
+	}
+
+	private void CustomContentPresenter_Loaded(object sender, RoutedEventArgs e)
+	{
+		InitializeInteractionTracker();
+	}
+
+
+	private void InitializeInteractionTracker()
+	{
+		_interactionTracker = InteractionTracker.CreateWithOwner(_compositor, this);
+
+		_visualInteractionSource = VisualInteractionSource.Create(_visual);
+		
+		_visualInteractionSource.PointerWheelConfig.ScaleSourceMode = InteractionSourceRedirectionMode.Disabled;
+		_visualInteractionSource.PointerWheelConfig.PositionYSourceMode = InteractionSourceRedirectionMode.Disabled;
+		_visualInteractionSource.PointerWheelConfig.PositionXSourceMode = InteractionSourceRedirectionMode.Disabled;
+		_visualInteractionSource.ManipulationRedirectionMode = VisualInteractionSourceRedirectionMode.CapableTouchpadAndPointerWheel;
+		_visualInteractionSource.PositionXSourceMode = InteractionSourceMode.Disabled;
+		_visualInteractionSource.PositionYSourceMode = InteractionSourceMode.Disabled;
+		_visualInteractionSource.ScaleSourceMode = InteractionSourceMode.EnabledWithoutInertia;
+		if (_sourcer.Count > 0)
+		{
+			foreach (var sourcer in _sourcer)
+			{
+				_interactionTracker.InteractionSources.Add(sourcer);
+			}
+			_sourcer.Clear();
+		}
+			_interactionTracker.InteractionSources.Add(_visualInteractionSource);
+		_interactionTracker.MaxScale = 124;
+		_interactionTracker.MinScale = 0.01f;
+		//interactionTracker.MaxPosition = new System.Numerics.Vector3(0, 2000, 0);
+		//interactionTracker.MinPosition = new System.Numerics.Vector3(0, -2000, 0);
+		var content = (UIElement)VisualTreeHelper.GetChild(this, 0);
+
+		if (!IsCenteringEnabled)
+		{
+			_maxSizeAnimation = _compositor.CreateExpressionAnimation("Vector3(Max(0, content.Size.X * interactionTracker.Scale  - 5), Max(0, content.Size.Y * interactionTracker.Scale  - 5), 0)");
+			_maxSizeAnimation.SetReferenceParameter("viewport", _visual);
+			_maxSizeAnimation.SetReferenceParameter("content", content.GetVisual());
+			_maxSizeAnimation.SetReferenceParameter("interactionTracker", _interactionTracker);
+			_interactionTracker.StartAnimation("MaxPosition", _maxSizeAnimation);
+
+			_minSizeAnimation = _compositor.CreateExpressionAnimation("Vector3(Min(-viewport.Size.X + 5,5), Min(-viewport.Size.Y + 5,5), 0)");
+			_minSizeAnimation.SetReferenceParameter("viewport", _visual);
+			_minSizeAnimation.SetReferenceParameter("content", content.GetVisual());
+			_minSizeAnimation.SetReferenceParameter("interactionTracker", _interactionTracker);
+			_interactionTracker.StartAnimation("MinPosition", _minSizeAnimation);
+		}
+		else
+		{
+			_maxSizeAnimation = _compositor.CreateExpressionAnimation("Vector3(Max(0, content.Size.X * interactionTracker.Scale - viewport.Size.X), Max(0, content.Size.Y * interactionTracker.Scale  - viewport.Size.Y), 0)");
+			_maxSizeAnimation.SetReferenceParameter("viewport", _visual);
+			_maxSizeAnimation.SetReferenceParameter("content", content.GetVisual());
+			_maxSizeAnimation.SetReferenceParameter("interactionTracker", _interactionTracker);
+			_interactionTracker.StartAnimation("MaxPosition", _maxSizeAnimation);
+
+			_minSizeAnimation = _compositor.CreateExpressionAnimation("Vector3(Min(0, content.Size.X * interactionTracker.Scale - viewport.Size.X), Min(0, content.Size.Y * interactionTracker.Scale - viewport.Size.Y), 0)");
+			_minSizeAnimation.SetReferenceParameter("viewport", _visual);
+			_minSizeAnimation.SetReferenceParameter("content", content.GetVisual());
+			_minSizeAnimation.SetReferenceParameter("interactionTracker", _interactionTracker);
+			_interactionTracker.StartAnimation("MinPosition", _minSizeAnimation);
+		}
+
+
+			_scrollAnimation = _compositor.CreateExpressionAnimation("Vector3(-interactionTracker.Position.X,-interactionTracker.Position.Y, 0)");
+		_scrollAnimation.SetReferenceParameter("interactionTracker", _interactionTracker);
+		content.GetVisual().StartAnimation("Offset", _scrollAnimation);
+		var zoomAnimation = _compositor.CreateExpressionAnimation("Vector3(interactionTracker.Scale,interactionTracker.Scale,0)");
+		zoomAnimation.SetReferenceParameter("interactionTracker", _interactionTracker);
+		content.GetVisual().StartAnimation("Scale", zoomAnimation);
+
+		
+
+
+	}
+
+	public void CustomAnimationStateEntered(InteractionTracker sender, InteractionTrackerCustomAnimationStateEnteredArgs args)
+	{
+		//Debug.WriteLine(nameof(CustomAnimationStateEntered));
+		if (!_isSubscribed)
+		{
+				_isSubscribed = true;
+			Windows.UI.Xaml.Media.CompositionTarget.Rendering += CompositionTarget_Rendering;
+		}
+	}
+
+	public void IdleStateEntered(InteractionTracker sender, InteractionTrackerIdleStateEnteredArgs args)
+	{
+		//Debug.WriteLine(nameof(IdleStateEntered));
+		_isSubscribed = false;
+			Windows.UI.Xaml.Media.CompositionTarget.Rendering -= CompositionTarget_Rendering;
+	}
+	private Vector3 _initial;
+	public void InertiaStateEntered(InteractionTracker sender, InteractionTrackerInertiaStateEnteredArgs args)
+	{
+		//Debug.WriteLine(nameof(InertiaStateEntered));
+		_initial = _interactionTracker.Position;
+		if (!_isSubscribed)
+		{
+			_isSubscribed = true;
+			Windows.UI.Xaml.Media.CompositionTarget.Rendering += CompositionTarget_Rendering;
+		}
+	}
+
+	public void InteractingStateEntered(InteractionTracker sender, InteractionTrackerInteractingStateEnteredArgs args)
+	{
+		//Debug.WriteLine(nameof(InteractingStateEntered));
+		if (!_isSubscribed)
+		{
+
+			_isSubscribed = true;
+			Windows.UI.Xaml.Media.CompositionTarget.Rendering += CompositionTarget_Rendering;
+		}
+	}
+
+	bool _isSubscribed;
+	private void CompositionTarget_Rendering(object sender, object e)
+	{
+		InvalidateViewport();
+		//VerticalOffset = _interactionTracker.Position.Y;
+
+	}
+
+	public void RequestIgnored(InteractionTracker sender, InteractionTrackerRequestIgnoredArgs args)
+	{
+
+	}
+
+	public void ValuesChanged(InteractionTracker sender, InteractionTrackerValuesChangedArgs args)
+	{
+		InvalidateViewport();
+		//VerticalOffset = args.Position.Y;
+	}
+
+	private ExpressionAnimation _scrollAnimation;
+	private ExpressionAnimation _maxSizeAnimation;
+	private ExpressionAnimation _minSizeAnimation;
+
+
+
+	protected override Size MeasureOverride(Size availableSize)
+	{
+		Size measurredSize;
+
+		if (Content == null)
+		{
+			measurredSize = base.MeasureOverride(availableSize);
+		}
+		else
+		{
+			FrameworkElement child = (VisualTreeHelper.GetChild(this, 0) as FrameworkElement);
+			child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+			measurredSize = new Size(child.DesiredSize.Width + Padding.Left + Padding.Right, child.DesiredSize.Height + Padding.Top + Padding.Bottom);
+		}
+
+		return new Size(Math.Min(measurredSize.Width, availableSize.Width), Math.Min(measurredSize.Height, availableSize.Height));
+	}
+
+
+	protected override Size ArrangeOverride(Size finalSize)
+	{
+		FrameworkElement child = (VisualTreeHelper.GetChild(this, 0) as FrameworkElement);
+		var res = base.ArrangeOverride(finalSize);
+		return res;
+	}
+}
